@@ -1,0 +1,215 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "72c0009b-05a4-4558-a044-12cbcd8bb4bd",
+              "leftValue": "={{ $binary && Object.keys($binary).length > 0 }}",
+              "rightValue": "=true",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "c46e890a-168e-408e-9f07-8d109a8d67eb",
+              "leftValue": "={{ $binary.attachment_0.fileName}}",
+              "rightValue": "csv",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -208,
+        112
+      ],
+      "id": "b9afd038-b58b-4176-be12-d3bbb9396c8e",
+      "name": "Verificar anexo tipo CSV"
+    },
+    {
+      "parameters": {
+        "fromEmail": "={{ $('Receber email').item.json.metadata['delivered-to'] }}",
+        "toEmail": "={{ $('Receber email').item.json.from }}",
+        "subject": "Cotação USD",
+        "emailFormat": "text",
+        "text": "=O e-mail foi recebido, mas nenhum anexo CSV válido foi encontrado. \n\nPor favor, verifique o email e reenvie.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        256
+      ],
+      "id": "79b2ff2a-1489-46d4-9182-6898d49128b3",
+      "name": "Enviar email de falha",
+      "webhookId": "c3702d1d-f29b-4124-8dc6-724346004429",
+      "credentials": {
+        "smtp": {
+          "id": "IIR65UOXNKsbFAtZ",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "downloadAttachments": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailReadImap",
+      "typeVersion": 2.1,
+      "position": [
+        -400,
+        64
+      ],
+      "id": "4c4cd4af-7376-47ab-b479-1255012112de",
+      "name": "Receber email",
+      "credentials": {
+        "imap": {
+          "id": "hA68BIMd6ih1Diom",
+          "name": "IMAP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "={{ $env.PASTA_CSV + '/' + $binary.attachment_0.fileName }}\n",
+        "dataPropertyName": "attachment_0",
+        "options": {
+          "append": false
+        }
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "f9fa900c-536f-44ba-8a90-5fa8781a84a6",
+      "name": "Salvar arquivo no repositorio local"
+    },
+    {
+      "parameters": {
+        "url": "https://open.er-api.com/v6/latest/USD",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        176,
+        0
+      ],
+      "id": "85c44007-e308-476c-ac6e-7ec067d6fa8f",
+      "name": "Buscar cotação do dolar"
+    },
+    {
+      "parameters": {
+        "fromEmail": "={{ $('Receber email').item.json.metadata['delivered-to'] }}",
+        "toEmail": "={{ $('Receber email').item.json.from }}",
+        "subject": "Cotação USD",
+        "emailFormat": "text",
+        "text": "=Anexo processado com sucesso, arquivo salvo no repositorio.\n\nA cotação de hoje (USD -> BRL) é:\n{{ $json.rates.BRL }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "87df7125-a352-4963-af32-556ce97f7cf5",
+      "name": "Enviar email de sucesso",
+      "webhookId": "c3702d1d-f29b-4124-8dc6-724346004429",
+      "credentials": {
+        "smtp": {
+          "id": "IIR65UOXNKsbFAtZ",
+          "name": "SMTP account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Verificar anexo tipo CSV": {
+      "main": [
+        [
+          {
+            "node": "Salvar arquivo no repositorio local",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Enviar email de falha",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Receber email": {
+      "main": [
+        [
+          {
+            "node": "Verificar anexo tipo CSV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Salvar arquivo no repositorio local": {
+      "main": [
+        [
+          {
+            "node": "Buscar cotação do dolar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar cotação do dolar": {
+      "main": [
+        [
+          {
+            "node": "Enviar email de sucesso",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "4bb0501e-b19f-4e19-b105-bdde1b8c0752",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "02b5816e8358ae1491488c27daa104898f53af7d61f3a6911c947d93c4e6873e"
+  },
+  "id": "kR3O22ou7lrK6LFd",
+  "tags": []
+}

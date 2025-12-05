@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  n8n:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5678:5678"
+    env_file:
+      - .env
+    volumes:
+      - n8n_data:/home/node/.n8n 
+      - ./ArquivosOnfly:/files 
+      - ./workflows:/home/node/.n8n/workflows
+      
+    restart: always
+volumes:
+  n8n_data:
