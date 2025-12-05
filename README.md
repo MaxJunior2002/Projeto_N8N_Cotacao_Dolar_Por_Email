@@ -126,6 +126,7 @@ Para validar a funcionalidade do projeto, siga os passos abaixo:
     * Abra o terminal e acesse o terminal do seu container: `docker exec -it testeonfly-n8n-1 sh`
     * Verifique se o arquivo foi salvo no ponto de montagem: `ls -la /files`
     * O arquivo `csv_teste.csv` deve estar listado.
+    * O mesmo tambem estara salvo na pasta local `/ArquivosOnfly` ou a pasta alterada no arquivo de configuração
 2.  **Verificação da Resposta (Confirmação):**
     * Verifique a caixa de entrada do **Remetente Original** (a conta de e-mail usada para enviar o teste).
     * Você deve receber um e-mail de confirmação (enviado pelo SMTP account) contendo a cotação USD→BRL.
