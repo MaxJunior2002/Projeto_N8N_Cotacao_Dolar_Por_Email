@@ -52,7 +52,7 @@ O ambiente utiliza Docker para garantir consistência e persistência de dados (
 
 ## ⚙️ Configuração de E-mail e Protocolos
 
-As credenciais **NÃO** são salvas no arquivo `.json`. Você deve criá-las na interface do n8n com os **nomes exatos** listados abaixo para que o fluxo funcione.
+As credenciais **NÃO** são salvas no arquivo `.json` por segurança. Você deve criá-las na interface do n8n com os **nomes exatos** listados abaixo.
 
 ### 1. Credenciais Necessárias (Nomes Exatos)
 
@@ -85,24 +85,47 @@ Para teste imediato, utilize estas configurações para criar as credenciais no 
 
 ### Escolha de Armazenamento
 
-A escolha foi feita pela gravação do arquivo local usando o nó **"Write file to disk"**. Isso cumpre o requisito de **configurabilidade** através da variável de ambiente `PASTA_CSV` e do mapeamento de volume do Docker.
+Foi escolhida a gravação do arquivo local usando o nó **"Write file to disk"**. Isso cumpre o requisito de **configurabilidade** através da variável de ambiente `PASTA_CSV` e do mapeamento de volume do Docker.
 
 ### Configuração da Pasta de Destino
 
 * O **Workflow** utiliza a variável `PASTA_CSV` que, no Docker, aponta para o volume **`/files`**.
-* **Expressão no Nó de Gravação:** O nó **"Salvar arquivo no repositório local"** usa a expressão final e corrigida: `{{ $env["PASTA_CSV"] }}/{{ $json.attachments[0].fileName }}`
+* **Expressão no Nó de Gravação:** O nó **"Salvar arquivo no repositório local"** usa a expressão: `{{ $env["PASTA_CSV"] }}/{{ $json.attachments[0].fileName }}`
 
-Para alterar a pasta de destino, edite o volume no `docker-compose.yml` para mapear um novo caminho local (ex: `./Novo_Caminho:/files`).
+Para alterar a pasta de destino (Ex: para a pasta `ArquivosOnfly2` em seu host), edite o mapeamento de volume no seu `docker-compose.yml` e reinicie o Docker.
 
 ### Fluxo de E-mail
 
-O e-mail de confirmação é sempre enviado ao **remetente do e-mail recebido**, acessando o endereço através da expressão: `{{ $('Receber email').item.json.from }}`.
+O e-mail de confirmação é sempre enviado ao **remetente do e-mail recebido**, acessando o endereço através da expressão: `{{ $node["Receber email"].json.from.emailAddress }}`.
 
 ---
 
-## 🧪 Teste Final
+## 🧪 Teste Final: Execução Completa do Workflow
 
-1.  Crie as credenciais com os nomes exatos.
-2.  Ative o workflow.
-3.  Envie o arquivo `csv_teste.csv` ou outro arquivo de sua escolha para o e-mail configurado.
-4.  Verifique se o arquivo foi salvo na pasta local e se o e-mail de resposta foi recebido com a cotação do dólar.
+Para validar a funcionalidade do projeto, siga os passos abaixo:
+
+### Passo 1: Preparação do n8n (Importação)
+
+1.  **Acesse a Interface do n8n:** Abra `http://localhost:5678`.
+2.  **Importar o Workflow:**
+    * Crie um novo workflow vazio.
+    * Clique no menu de **três pontos ( ... )** e selecione **"Import from File..."**.
+    * Escolha o arquivo **`TesteOnfly_MaximilianoAugusto.json`**.
+3.  **Crie as Credenciais:** Na seção "Credentials", crie a **`IMAP account`** e a **`SMTP account`** usando os nomes e as configurações de teste fornecidas.
+
+### Passo 2: Execução do Teste
+
+1.  **Prepare o E-mail de Teste:** Use qualquer outra conta de e-mail (simulando o remetente original).
+2.  **Anexe o CSV:** Anexe o arquivo **`csv_teste.csv`** (ou qualquer arquivo CSV).
+3.  **Endereço de Destino:** Envie o e-mail para o endereço configurado no seu Trigger (ex: `maxtesteonfly@gmail.com`).
+4.  **Ativar o Workflow:** Mude a chave seletora de **Inactive** para **Active** no canto superior direito.
+
+### Passo 3: Verificação dos Resultados
+
+1.  **Verificação do Arquivo Salvo (Gravação):**
+    * Abra o terminal e acesse o terminal do seu container: `docker exec -it testeonfly-n8n-1 sh`
+    * Verifique se o arquivo foi salvo no ponto de montagem: `ls -la /files`
+    * O arquivo `csv_teste.csv` deve estar listado.
+2.  **Verificação da Resposta (Confirmação):**
+    * Verifique a caixa de entrada do **Remetente Original** (a conta de e-mail usada para enviar o teste).
+    * Você deve receber um e-mail de confirmação (enviado pelo SMTP account) contendo a cotação USD→BRL.
